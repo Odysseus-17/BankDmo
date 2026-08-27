@@ -1,0 +1,28 @@
+server:
+    port: 8080
+    error:
+        include-mesaage: always
+
+spring:
+    application:
+        name: bckbank
+
+    datasource:
+        url: jdbc:mysql://localhost:3306/db_bank?createDatabaseIfnotExist=true&useSSL=false&allowpublickeyretrieval=true&serverTimezone=UTC
+        username: root
+        password: :Blanquita17
+        driver-class-name: com.mysql.cj.jdbc.Driver
+    jpa:
+        hibernate:
+            ddl-auto: update # en produccion va: validate
+        show-sql: true
+        properties:
+            hibernate:
+                format_sql: true
+                dialect: org.hibernate.dialect.MySQLDialect
+app:
+    jwt:
+        secret: #agregar un hash
+        experation-ms: #agregarrun un tiempo
+
+

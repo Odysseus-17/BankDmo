@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.darnelldev</groupId>
-    <artifactId>demo</artifactId>
+    <artifactId>bckbank</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>demo</name>
-    <description>demo</description>
+    <name>bckbank</name>
+    <description>bckbank</description>
     <url/>
     <licenses>
         <license/>
