@@ -6,7 +6,6 @@ import com.danidevbank.demo.dto.request.TransferRequest;
 import com.danidevbank.demo.dto.response.TransactionResponse;
 
 public interface TransactionService {
-    TransactionResponse trasnfer(TransferRequest request,  String currentUserEmail);
-    List<TransactionResponse> getAccountHistory(String accountNumber, String currentuserEmail);
-
+    TransactionResponse transfer(TransferRequest request, String currentUserEmail);
+    List<TransactionResponse> getAccountHistory(String accountNumber, String currentUserEmail);
 }

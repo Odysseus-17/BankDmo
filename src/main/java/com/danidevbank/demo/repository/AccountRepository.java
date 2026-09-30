@@ -9,5 +9,6 @@ import com.danidevbank.demo.entity.Account;
 
 public interface AccountRepository extends JpaRepository<Account, Long>{
     Optional<Account> findByAccountNumber(String accountNumber);
+    boolean existsByAccountNumber(String accountNumber);
     List<Account> findByUserId(Long userId);
 }

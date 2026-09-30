@@ -1,19 +1,20 @@
 server:
-    port: 8080   
+    port: 8080
 
 spring:
     application:
         name: bckdbank
 
-    datasource: # en prod sería secrets o variables de entrorno
-        url: jdbc:mysql://localhost:3306/db_bank?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-        username: root
-        password: root
+    datasource:
+        # MySQL debe estar disponible antes de iniciar la aplicación.
+        url: ${DB_URL:jdbc:mysql://localhost:3306/db_bank?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+        username: ${DB_USERNAME:root}
+        password: ${DB_PASSWORD:root}
         driver-class-name: com.mysql.cj.jdbc.Driver
 
     jpa:
         hibernate:
-            ddl-auto: update # en produccion va: validate
+            ddl-auto: update
         show-sql: true
         properties:
             hibernate:
@@ -22,5 +23,5 @@ spring:
 
 app:
     jwt:
-        secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970 #agregar un hash
-        expiration-ms: 86400000 # agregarun tiempo por ejemplo 24 horas
+        secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+        expiration-ms: 86400000

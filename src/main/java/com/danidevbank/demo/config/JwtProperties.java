@@ -1,15 +1,16 @@
 package com.danidevbank.demo.config;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
+
+import lombok.Getter;
+import lombok.Setter;
+
+@Component
+@ConfigurationProperties(prefix = "app.jwt")
+@Getter
+@Setter
 public class JwtProperties {
-
-    public long getExpirationMs() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getExpirationMs'");
-    }
-
-    public String getSecret() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getSecret'");
-    }
-
+    private String secret;
+    private long expirationMs;
 }

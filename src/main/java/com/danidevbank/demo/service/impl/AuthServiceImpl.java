@@ -97,6 +97,10 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private String generateAccountNumber() {
-        return "1008" + String.format("%06d", (int) (Math.random() * 1000));
+                String accountNumber;
+                do {
+                        accountNumber = "1008" + String.format("%06d", (int) (Math.random() * 1_000_000));
+                } while (accountRepository.existsByAccountNumber(accountNumber));
+                return accountNumber;
     }
 }

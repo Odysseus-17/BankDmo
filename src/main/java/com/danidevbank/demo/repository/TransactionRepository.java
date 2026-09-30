@@ -10,6 +10,6 @@ import com.danidevbank.demo.entity.Transaction;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
-    @Query("SELECT t FROM Transaction t WHERE t.sourceAccount.id = :accountId OR t.destinationAccount.id = : accountId ORDER BY t.timestamp DESC")
+    @Query("SELECT t FROM Transaction t WHERE t.sourceAccount.id = :accountId OR t.destinationAccount.id = :accountId ORDER BY t.timestamp DESC")
     List<Transaction> findAllByAccountId(@Param("accountId") Long accountId);
 }
