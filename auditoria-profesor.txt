@@ -1,0 +1,324 @@
+INFORME DE AUDITORIA - PROYECTO bckbank vs bckdbank (profesor)
+================================================================
+
+Analisis realizado en modo solo lectura. No se modifico, creo ni elimino
+ningun archivo del proyecto durante la auditoria. El repositorio del
+profesor se clono temporalmente en un directorio scratchpad fuera del
+proyecto y no se toco el working tree.
+
+================================================================
+1. ESTADO ACTUAL DE TU PROYECTO (com.darnelldev.demo)
+================================================================
+
+Rama: ponerse-al-dia-profesor, working tree limpio salvo repository/ sin trackear.
+
+Lo que tienes:
+- Entidades: User, Account, Transaction + enums Role, AccountType, TransactionType
+- Repositories: UserRepository, AccountRepository, TransactionRepository
+- DTOs request: LoginRequest, RegisterRequest, TransferRequest
+- DTOs response: AccountResponse, AuthResponse, TransactionResponse
+- Config: JwtProperties, SecurtityConfig (ambos VACIOS, solo el nombre de la clase)
+- application.yml con datasource MySQL y bloque app.jwt sin completar
+
+Lo que NO tienes (todavia inexistente en tu proyecto):
+- Paquete service / service.impl completo
+- Paquete controller
+- Paquete security (JwtTokenProvider, JwtAuthenticationFilter, CustomUserDetailsService)
+- Paquete exception (excepciones personalizadas + GlobalExceptionHandler)
+- Dependencias JWT, validacion y driver MySQL en pom.xml
+
+Tu ultimo commit real corresponde aproximadamente a 2026-08-27 07:19, justo
+en medio de la clase donde se crearon los DTOs -- es decir, coincide con el
+punto exacto donde el profesor termina su commit "aebf407 Se crea la base
+de los dto" (07:15) y antes de "f0b0b94 Request de login y transaccion" (07:29).
+
+================================================================
+2. ESTADO ACTUAL DEL PROYECTO DEL PROFESOR (com.danidevbank.demo)
+================================================================
+
+Estructura mucho mas completa:
+
+config/       JwtProperties (implementado), SecurtityConfig (vacio aun)
+controller/   AccountController
+dto/          request/response (completos y con imports correctos)
+entity/       Account, Transaction, User + enums
+exception/    BadRequestException, InsufficientBalanceException,
+              ResourceNotFoundException, GlobalExceptionHandler
+repository/   AccountRepository, TransactionRepository, UserRepository
+security/     CustomUserDetailsService, JwtAuthenticationFilter,
+              JwtTokenProvider, (CustomuserDetailservice = clase vacia huerfana)
+service/      AccountService, AuthService, TransactionService
+service/impl/ AccountServiceImpl, AuthServiceImpl, TransactionServiceImpl (incompleto)
+
+Su ultimo commit (3a78793 "Pendiente por terminar", 2026-09-10 07:57) deja
+explicitamente TransactionServiceImpl a medias -- el profesor mismo no
+termino esa clase.
+
+================================================================
+3. COMMITS RELEVANTES DEL PROFESOR (historial completo)
+================================================================
+
+Hash     | Fecha              | Mensaje                                              | Relacion contigo
+---------|--------------------|-----------------------------------------------------|-----------------------------------------
+3c08abf..0f8ed91 | 2026-08-05/20 | Setup inicial, entidades, enums | Ya lo tienes (equivalente)
+6640662..2080997 | 2026-08-27 06:00-07:39 | Repos, config conexion, DTOs request/response | Coincide con tu ultima clase asistida (07:19) - te quedaste a mitad
+74133f2  | 2026-08-27 09:54   | Agrega spring-boot-starter-validation (arregla imports de validacion en DTOs) | Justo despues de tu ultimo commit - no llegaste a este ajuste
+114a632  | 2026-09-03 06:25   | "Ajustando algunos errores" - corrige User, UserRepository, application.yml | Clase que faltaste #1
+0491a64  | 2026-09-03 08:35   | Crea las 3 excepciones + GlobalExceptionHandler | Clase que faltaste #1
+405794b  | 2026-09-03 08:35   | AccountService + AccountServiceImpl | Clase que faltaste #1
+393a4aa  | 2026-09-03 08:37   | Ajusta excepciones | Clase que faltaste #1
+19b35ec  | 2026-09-10 06:37   | AccountController (endpoints de cuentas) | Clase que faltaste #2
+099487b  | 2026-09-10 07:15   | Actualiza pom.xml: agrega jjwt-api/impl/jackson, devtools, mysql-connector-j | Clase que faltaste #2
+aec9e9d  | 2026-09-10 07:15   | Interfaz AuthService | Clase que faltaste #2
+5aca40c  | 2026-09-10 07:22   | Primer aporte de JWT: CustomuserDetailservice (vacia), JwtAuthenticationFilter, JwtTokenProvider (stubs), AuthServiceImpl inicial | Clase que faltaste #2
+4c0af9b  | 2026-09-10 07:34   | Completa JwtProperties, JwtTokenProvider, JwtAuthenticationFilter, crea CustomUserDetailsService real, termina AuthServiceImpl, agrega Readme.md | Clase que faltaste #2
+8c6517a  | 2026-09-10 07:39   | Interfaz TransactionService | Clase que faltaste #2
+3a78793  | 2026-09-10 07:57   | TransactionServiceImpl - incompleto, con TODOs sin terminar | Clase que faltaste #2 (el profesor tampoco lo termino)
+
+Conclusion temporal: las clases parecen ser semanales (jueves ~mismo
+horario). Faltaste exactamente a las sesiones del 2026-09-03 y 2026-09-10,
+que cubrieron: excepciones + capa de servicio de cuentas, luego JWT
+completo + controller de cuentas + arranque del servicio de transacciones
+(sin terminar).
+
+================================================================
+4. COMPARACION DETALLADA
+================================================================
+
+--- YA LO TENGO (equivalente, funcionalmente igual) ---
+- Entidades User, Account, Transaction - estructura identica (entity/)
+- Enums AccountType, TransactionType - identicos
+- Repositories base (UserRepository, AccountRepository, TransactionRepository) - existen, aunque con errores (ver seccion 7)
+- DTOs base LoginRequest, RegisterRequest, TransferRequest, AccountResponse, AuthResponse, TransactionResponse - existen pero incompletos/rotos
+- application.yml con datasource MySQL - existe, con detalles pendientes
+
+--- ME FALTA (no existe en absoluto en tu proyecto) ---
+- pom.xml: dependencias jjwt-api, jjwt-impl, jjwt-jackson, spring-boot-starter-validation, mysql-connector-j, spring-boot-devtools
+- Paquete exception/: BadRequestException, InsufficientBalanceException, ResourceNotFoundException, GlobalExceptionHandler
+- Paquete service/: AccountService, AuthService, TransactionService (interfaces)
+- Paquete service/impl/: AccountServiceImpl, AuthServiceImpl, TransactionServiceImpl
+- Paquete security/: JwtTokenProvider, JwtAuthenticationFilter, CustomUserDetailsService
+- Paquete controller/: AccountController
+- Contenido real de JwtProperties (getters de secret/expiration) y de SecurtityConfig (SecurityFilterChain, PasswordEncoder bean, etc. - el profesor tampoco la implemento todavia, sigue vacia en su repo)
+- Valores reales en app.jwt.secret y app.jwt.expiration-ms de application.yml
+
+--- LO TENGO PERO DIFERENTE (existe en ambos lados, con diferencias) ---
+Archivo                              | Tu version                          | Version del profesor
+--------------------------------------|--------------------------------------|--------------------------------------------
+entity/enums/Role.java                | ADMIN, USER                          | ROLE_USER, ROLE_ADMIN (con prefijo ROLE_, requerido por Spring Security para hasRole())
+repository/AccountRepository.java     | metodo findByAccoutNumber (typo)     | findByAccountNumber (correcto)
+repository/TransactionRepository.java | JPQL roto (ver seccion 7)            | JPQL corregido: FROM Transaction t WHERE t.sourceAccount.id = :accountId OR t.destinationAccount.id = :accountId
+entity/User.java / Account.java       | campos createAt/updateAt             | campos createdAt/updatedAt (nombres mas correctos en ingles)
+DTOs LoginRequest/RegisterRequest/TransferRequest | anotaciones sin importar y con typos (Notblank, Decimalmin) | imports correctos de jakarta.validation.constraints.*
+dto/response/AccountResponse.java     | sin @Builder                         | con @Builder (necesario porque el servicio lo construye con .builder())
+pom.xml -> java.version               | 25                                   | 17 (diferencia de entorno, no es un error per se)
+
+--- NO ES NECESARIO COPIAR (bugs o clases vacias del profesor, no los repliques) ---
+- security/CustomuserDetailservice.java - clase vacia huerfana, duplicado mal escrito de CustomUserDetailsService, no se usa en ningun lado. Es basura de su propio repo.
+- config/SecurtityConfig.java del profesor - sigue vacia, no tiene SecurityFilterChain configurado todavia. No hay nada que copiar de ahi; tendras que escribirla tu (ver plan).
+- service/impl/TransactionServiceImpl.java del profesor - esta incompleto y no compila (llaves mal cerradas, import org.apache.coyote.BadRequestException en vez de su propia excepcion, el metodo se llama transfer pero la interfaz declara trasnfer con typo, y faltan 5 de los 6 pasos comentados). Si lo copias tal cual, tu proyecto no compilara.
+- controller/AccountController.java del profesor - tiene un bug real: importa org.apache.tomcat.util.net.openssl.ciphers.Authentication (una clase de cifrado TLS de Tomcat, no la interfaz de Spring Security) en vez de org.springframework.security.core.Authentication, llama authentication.name() en vez de .getName(), y el @PathVariable String accountNumber no coincide con {accountnumber} en minuscula de la ruta. No compilara como esta.
+
+================================================================
+5. FUNCIONALIDADES NUEVAS QUE SE AGREGARON EN LAS CLASES QUE FALTASTE
+================================================================
+
+1. Manejo centralizado de errores via @RestControllerAdvice con respuestas
+   JSON estandarizadas (timestamp, status, error, message) y manejo
+   especifico de errores de validacion (MethodArgumentNotValidException).
+2. Capa de servicio con arquitectura interfaz + implementacion (Service /
+   Impl), inyeccion por constructor con @RequiredArgsConstructor.
+3. Registro de usuario con creacion automatica de cuenta bancaria (saldo
+   inicial 1000.00, numero de cuenta generado) dentro de la misma
+   transaccion (@Transactional).
+4. Autenticacion real con Spring Security usando AuthenticationManager +
+   UsernamePasswordAuthenticationToken, en vez de solo comparar
+   contrasenas manualmente.
+5. JWT completo: generacion de token (JwtTokenProvider.generateToken),
+   extraccion de usuario desde el token, validacion de firma/expiracion,
+   y un filtro (JwtAuthenticationFilter) que intercepta cada request, lee
+   el header Authorization: Bearer ... y setea el SecurityContextHolder.
+6. CustomUserDetailsService que conecta tu entidad User con el modelo de
+   Spring Security (UserDetailsService).
+7. Endpoints REST reales (AccountController) para listar cuentas del
+   usuario autenticado y consultar una cuenta especifica, protegidos por
+   el usuario logueado extraido del Authentication.
+8. Inicio de la logica de transferencias entre cuentas (aunque el
+   profesor la dejo a medio hacer: validar cuentas distintas, origen,
+   destino, saldo suficiente, actualizar saldos, registrar transaccion -
+   solo el primer paso esta esbozado).
+
+================================================================
+6. QUE ME FALTA (resumen priorizado)
+================================================================
+
+1. Dependencias en pom.xml: JWT (jjwt), validacion, driver MySQL
+2. Excepciones personalizadas + manejador global
+3. Interfaces y Enums correctos (Role con prefijo ROLE_)
+4. Capa de servicio (Account, Auth, Transaction) e implementaciones
+5. Seguridad: JwtProperties, JwtTokenProvider, JwtAuthenticationFilter,
+   CustomUserDetailsService, y SecurtityConfig real (el profesor tampoco
+   la hizo - tendras que investigarla/hacerla tu, es contenido de clase
+   pendiente para ambos)
+6. Controller de cuentas (corrigiendo los bugs que trae el original)
+7. Logica de transferencias (terminar lo que el profesor dejo incompleto)
+8. Completar application.yml con secret/expiration de JWT
+
+================================================================
+7. ERRORES QUE YA EXISTEN EN TU CODIGO ACTUAL (no corregidos aun)
+================================================================
+
+dto/request/LoginRequest.java
+- Usa @Email, @NotBlank, @Size sin ningun import -> no compila
+- @Notblank (con "b" minuscula) no existe como anotacion -> typo
+
+dto/request/RegisterRequest.java
+- Solo importa @Email; usa @NotBlank y @Size sin importar
+- Mismo typo @Notblank
+
+dto/request/TransferRequest.java
+- Cero imports de validacion; usa @Notblank, @NotNull, @Decimalmin
+  (deberia ser @DecimalMin) sin importar nada -> no compila
+
+dto/response/TransactionResponse.java
+- Sin anotaciones Lombok (@Getter/@Builder), pero se pretende construir
+  con builder en el servicio
+- Campo declarado como "TransactionType TransactionType" (tipo y nombre
+  de campo identicos, mala practica, aunque tecnicamente compila)
+- Linea suelta "Private" (con mayuscula, sin tipo ni nombre) al final del
+  cuerpo de la clase -> no compila
+
+config/JwtProperties.java y config/SecurtityConfig.java
+- Ambas son clases completamente vacias (solo package + public class X {}),
+  sin ningun campo ni configuracion
+
+repository/AccountRepository.java
+- Metodo findByAccoutNumber (falta la "n" de "Account") - Spring Data JPA
+  no podra derivar la consulta correctamente contra el campo real
+  accountNumber
+
+repository/TransactionRepository.java
+- JPQL roto: "SELECT t FROM Transaction WHERE t.sourceAccoutn.id = :
+  accountId OR t.destinationAccount = : accountId ORDER BY t.timestamp DESC"
+  - Falta el alias de la entidad (FROM Transaction t, no solo FROM Transaction)
+  - Typo sourceAccoutn (deberia ser sourceAccount)
+  - Compara t.destinationAccount (una entidad Account) directamente contra
+    un Long - deberia ser t.destinationAccount.id
+  - Este JPQL no compilara al iniciar la aplicacion (Hibernate falla al
+    parsear la query)
+
+pom.xml
+- spring-boot-starter-webmvc no es un artifactId real de Spring Boot (el
+  correcto es spring-boot-starter-web)
+- spring-boot-starter-data-jpa-test, spring-boot-starter-security-test,
+  spring-boot-starter-webmvc-test tampoco existen como artifacts -
+  normalmente se usa spring-boot-starter-test (scope test) + opcionalmente
+  spring-security-test
+- Faltan dependencias: JWT (jjwt), validacion (spring-boot-starter-validation),
+  driver MySQL (mysql-connector-j) - aunque application.yml ya referencia
+  com.mysql.cj.jdbc.Driver
+
+application.yml
+- Typo include-mesaage (deberia ser include-message)
+- Bloque app.jwt.secret y app.jwt.expiration-ms estan vacios/con
+  comentario placeholder, sin valores reales
+
+Nota: dado que pom.xml referencia artifacts inexistentes, es probable que
+tu proyecto actualmente ni siquiera compile/descargue dependencias
+correctamente. Esto es independiente de si asististe o no a las clases -
+es un error de base que conviene corregir primero.
+
+================================================================
+8. PLAN EXACTO PARA PONERTE AL DIA (ordenado por prioridad/dependencia)
+================================================================
+
+1. Corregir pom.xml: reemplazar spring-boot-starter-webmvc por
+   spring-boot-starter-web, quitar los "-test" inexistentes y usar
+   spring-boot-starter-test, agregar spring-boot-starter-validation,
+   mysql-connector-j, y las 3 dependencias jjwt-*.
+2. Corregir los DTOs request (LoginRequest, RegisterRequest,
+   TransferRequest): agregar imports correctos de
+   jakarta.validation.constraints.* y arreglar los typos @Notblank ->
+   @NotBlank, @Decimalmin -> @DecimalMin.
+3. Corregir TransactionResponse: quitar la linea "Private" suelta,
+   agregar @Getter @Builder, renombrar el campo TransactionType en
+   minuscula.
+4. Corregir Role.java: cambiar a ROLE_USER, ROLE_ADMIN (necesario para
+   que funcione con Spring Security mas adelante).
+5. Corregir repositorios: findByAccoutNumber -> findByAccountNumber en
+   AccountRepository; arreglar el JPQL de TransactionRepository (alias t,
+   sourceAccount, destinationAccount.id).
+6. Completar application.yml: agregar un valor real (hash Base64) para
+   app.jwt.secret y un numero en expiration-ms; corregir include-mesaage
+   -> include-message.
+7. Crear paquete exception/: BadRequestException,
+   InsufficientBalanceException, ResourceNotFoundException,
+   GlobalExceptionHandler.
+8. Implementar JwtProperties con getters/setters reales leyendo
+   app.jwt.secret / app.jwt.expiration-ms (usando
+   @ConfigurationProperties, idealmente mejor que el enfoque del profesor
+   que lanza UnsupportedOperationException).
+9. Crear paquete security/: JwtTokenProvider, CustomUserDetailsService,
+   JwtAuthenticationFilter.
+10. Escribir SecurtityConfig real (SecurityFilterChain, PasswordEncoder,
+    AuthenticationManager, registrar el filtro JWT) - el profesor no dejo
+    esto resuelto, hay que investigarlo o resolverlo por cuenta propia.
+11. Crear paquete service/: interfaces AccountService, AuthService,
+    TransactionService.
+12. Implementar AccountServiceImpl y AuthServiceImpl (register/login con
+    JWT).
+13. Crear AccountController, corrigiendo los bugs del original (import
+    correcto de Authentication, .getName(), coincidencia de nombre en
+    @PathVariable).
+14. Implementar TransactionServiceImpl completo (el profesor lo dejo a
+    medias): validar cuentas distintas, existencia de origen/destino,
+    saldo suficiente, actualizar balances, registrar transaccion.
+15. (Opcional, si el profesor lo agrega despues) Crear
+    TransactionController para exponer el endpoint de transferencias.
+
+NOTA IMPORTANTE: Este plan NO ha sido ejecutado. Se guarda unicamente
+como referencia para una futura autorizacion explicita.
+
+================================================================
+9. ARCHIVOS QUE HABRIA QUE CREAR/MODIFICAR
+================================================================
+
+--- Modificar (ya existen, tienen errores o estan incompletos) ---
+- pom.xml
+- src/main/resources/application.yml
+- dto/request/LoginRequest.java
+- dto/request/RegisterRequest.java
+- dto/request/TransferRequest.java
+- dto/response/TransactionResponse.java
+- dto/response/AccountResponse.java (agregar @Builder)
+- entity/enums/Role.java
+- repository/AccountRepository.java
+- repository/TransactionRepository.java
+- config/JwtProperties.java
+- config/SecurtityConfig.java
+
+--- Crear (no existen todavia) ---
+- exception/BadRequestException.java
+- exception/InsufficientBalanceException.java
+- exception/ResourceNotFoundException.java
+- exception/GlobalExceptionHandler.java
+- security/JwtTokenProvider.java
+- security/JwtAuthenticationFilter.java
+- security/CustomUserDetailsService.java
+- service/AccountService.java
+- service/AuthService.java
+- service/TransactionService.java
+- service/impl/AccountServiceImpl.java
+- service/impl/AuthServiceImpl.java
+- service/impl/TransactionServiceImpl.java
+- controller/AccountController.java
+
+================================================================
+FIN DEL INFORME
+================================================================
+
+No se ha modificado ningun archivo del proyecto durante esta auditoria.
+El repositorio del profesor fue clonado temporalmente en un directorio
+scratchpad fuera del proyecto (no dentro de este repositorio) unicamente
+para su analisis. El plan de implementacion descrito en la seccion 8 no
+ha sido ejecutado; requiere autorizacion explicita para comenzar.

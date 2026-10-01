@@ -9,7 +9,6 @@ import java.util.List;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
-    @Query("SELECT t FROM Transaction WHERE t.sourceAccoutn.id = : accountId OR t.destinationAccount = : accountId ORDER BY t.timestamp DESC ")
-
+    @Query("SELECT t FROM Transaction t WHERE t.sourceAccount.id = :accountId OR t.destinationAccount.id = :accountId ORDER BY t.timestamp DESC")
     List<Transaction> findByAccountId(@Param("accountId") Long accountId);
 }

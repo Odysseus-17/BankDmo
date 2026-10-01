@@ -1,20 +1,25 @@
 package com.darnelldev.demo.dto.request;
 
+import java.math.BigDecimal;
+
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
-import java.math.BigDecimal;
+
 @Getter
 @Setter
 public class TransferRequest {
 
-    @Notblank(message=" la cuenta de origen es requerida")
+    @NotBlank(message="La cuenta de origen es requerida")
     private String sourceAccountNumber;
 
-    @Notblank(message=" la cuenta de destino es requerida")
+    @NotBlank(message="La cuenta de destino es requerida")
     private String destinationAccountNumber;
 
-    @NotNull(message=" la cuenta no debe ir vacia")
-    @Decimalmin(value = "0.01", message="el monto debe ser superio a cero")
+    @NotNull(message="El monto es obligatorio")
+    @DecimalMin(value = "0.01", message="El monto debe ser superior a cero")
     private BigDecimal amount;
 
     private String description;

@@ -1,16 +1,16 @@
 server:
     port: 8080
     error:
-        include-mesaage: always
+        include-message: always
 
 spring:
     application:
         name: bckbank
 
     datasource:
-        url: jdbc:mysql://localhost:3306/db_bank?createDatabaseIfnotExist=true&useSSL=false&allowpublickeyretrieval=true&serverTimezone=UTC
-        username: root
-        password: :Blanquita17
+        url: jdbc:mysql://localhost:3306/db_bank?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+        username: ${DB_USERNAME:root}
+        password: ${DB_PASSWORD}
         driver-class-name: com.mysql.cj.jdbc.Driver
     jpa:
         hibernate:
@@ -22,7 +22,5 @@ spring:
                 dialect: org.hibernate.dialect.MySQLDialect
 app:
     jwt:
-        secret: #agregar un hash
-        experation-ms: #agregarrun un tiempo
-
-
+        secret: ${JWT_SECRET}
+        expiration-ms: ${JWT_EXPIRATION_MS:86400000}
