@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.darnelldev.demo.dto.request.AccountOperationRequest;
 import com.darnelldev.demo.dto.request.TransferRequest;
 import com.darnelldev.demo.dto.response.TransactionResponse;
 import com.darnelldev.demo.entity.Account;
@@ -80,6 +81,58 @@ public class TransactionServiceImpl implements TransactionService {
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public TransactionResponse deposit(AccountOperationRequest request, String currentUserEmail) {
+        Account account = findOwnAccount(request.getAccountNumber(), currentUserEmail);
+
+        account.setBalance(account.getBalance().add(request.getAmount()));
+        accountRepository.save(account);
+
+        // En un deposito el dinero entra desde fuera del banco: no hay cuenta de origen
+        Transaction transaction = Transaction.builder()
+                .destinationAccount(account)
+                .amount(request.getAmount())
+                .transactionType(TransactionType.DEPOSIT)
+                .description(request.getDescription() == null || request.getDescription().isBlank() ? "Deposito en cuenta" : request.getDescription())
+                .build();
+
+        return mapToResponse(transactionRepository.save(transaction));
+    }
+
+    @Override
+    @Transactional
+    public TransactionResponse withdraw(AccountOperationRequest request, String currentUserEmail) {
+        Account account = findOwnAccount(request.getAccountNumber(), currentUserEmail);
+
+        if (account.getBalance().compareTo(request.getAmount()) < 0) {
+            throw new InsufficientBalanceException("Saldo insuficiente para realizar el retiro");
+        }
+
+        account.setBalance(account.getBalance().subtract(request.getAmount()));
+        accountRepository.save(account);
+
+        // En un retiro el dinero sale del banco: no hay cuenta de destino
+        Transaction transaction = Transaction.builder()
+                .sourceAccount(account)
+                .amount(request.getAmount())
+                .transactionType(TransactionType.WITHDRAWAL)
+                .description(request.getDescription() == null || request.getDescription().isBlank() ? "Retiro de cuenta" : request.getDescription())
+                .build();
+
+        return mapToResponse(transactionRepository.save(transaction));
+    }
+
+    private Account findOwnAccount(String accountNumber, String currentUserEmail) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada: " + accountNumber));
+
+        if (!account.getUser().getEmail().equals(currentUserEmail)) {
+            throw new BadRequestException("La cuenta no pertenece al usuario autenticado");
+        }
+        return account;
     }
 
     private TransactionResponse mapToResponse(Transaction transaction) {

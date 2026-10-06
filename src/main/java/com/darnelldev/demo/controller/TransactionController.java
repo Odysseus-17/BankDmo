@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.darnelldev.demo.dto.request.AccountOperationRequest;
 import com.darnelldev.demo.dto.request.TransferRequest;
 import com.darnelldev.demo.dto.response.TransactionResponse;
 import com.darnelldev.demo.service.TransactionService;
@@ -32,6 +33,20 @@ public class TransactionController {
             @Valid @RequestBody TransferRequest request,
             Authentication authentication) {
         return ResponseEntity.ok(transactionService.transfer(request, authentication.getName()));
+    }
+
+    @PostMapping("/deposit")
+    public ResponseEntity<TransactionResponse> deposit(
+            @Valid @RequestBody AccountOperationRequest request,
+            Authentication authentication) {
+        return ResponseEntity.ok(transactionService.deposit(request, authentication.getName()));
+    }
+
+    @PostMapping("/withdraw")
+    public ResponseEntity<TransactionResponse> withdraw(
+            @Valid @RequestBody AccountOperationRequest request,
+            Authentication authentication) {
+        return ResponseEntity.ok(transactionService.withdraw(request, authentication.getName()));
     }
 
     @GetMapping("/account/{accountNumber}")
