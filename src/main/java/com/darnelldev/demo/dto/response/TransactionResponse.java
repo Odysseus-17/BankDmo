@@ -13,7 +13,7 @@ import lombok.Getter;
 public class TransactionResponse {
     private Long id;
     private String sourceAccountNumber;
-    private String destinationAccountNumber;
+    private String destinationAccount;
     private BigDecimal amount;
     private TransactionType transactionType;
     private String description;

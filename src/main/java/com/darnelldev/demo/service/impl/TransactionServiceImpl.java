@@ -139,7 +139,7 @@ public class TransactionServiceImpl implements TransactionService {
         return TransactionResponse.builder()
                 .id(transaction.getId())
                 .sourceAccountNumber(transaction.getSourceAccount() != null ? transaction.getSourceAccount().getAccountNumber() : null)
-                .destinationAccountNumber(transaction.getDestinationAccount() != null ? transaction.getDestinationAccount().getAccountNumber() : null)
+                .destinationAccount(transaction.getDestinationAccount() != null ? transaction.getDestinationAccount().getAccountNumber() : null)
                 .amount(transaction.getAmount())
                 .transactionType(transaction.getTransactionType())
                 .description(transaction.getDescription())
