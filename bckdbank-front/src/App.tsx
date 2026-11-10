@@ -1,14 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { ApiError, bankApi, marketApi, type Account, type AuthResponse, type CompanyProfile, type Quote, type Transaction, type TransferValues } from './lib/api'
+import {
+  ApiError, bankApi, exchangeApi, isAuthError, marketApi,
+  type Account, type AuthResponse, type CompanyProfile, type ExchangeRates, type OperationValues, type Quote, type Transaction, type TransferValues,
+} from './lib/api'
+import { sortByNewest } from './lib/movements'
 import type { AuthMode } from './types/auth'
 import AuthScreen from './components/AuthScreen'
 import Dashboard from './components/Dashboard'
 import './App.css'
 
+const SESSION_KEY = 'bckdbank.session'
+
 function readSession(): AuthResponse | null {
   try {
-    const saved = localStorage.getItem('bckdbank.session')
+    const saved = localStorage.getItem(SESSION_KEY)
     if (!saved) return null
     const session = JSON.parse(saved) as AuthResponse
     return session.token && session.email ? session : null
@@ -21,7 +27,6 @@ function App() {
   const [session, setSession] = useState<AuthResponse | null>(readSession)
   const [accounts, setAccounts] = useState<Account[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [selectedId, setSelectedId] = useState<number | null>(null)
   const [loadedDashboardKey, setLoadedDashboardKey] = useState('')
   const [refreshKey, setRefreshKey] = useState(0)
   const [dashboardError, setDashboardError] = useState('')
@@ -33,11 +38,33 @@ function App() {
   const [marketError, setMarketError] = useState('')
   const [marketRetry, setMarketRetry] = useState(0)
   const [loadedMarketKey, setLoadedMarketKey] = useState('')
+  const [rates, setRates] = useState<ExchangeRates | null>(null)
+  const [ratesError, setRatesError] = useState('')
+  const [ratesRetry, setRatesRetry] = useState(0)
+  const [loadedRatesKey, setLoadedRatesKey] = useState('')
 
   const dashboardRequestKey = session ? `${session.token}:${refreshKey}` : ''
   const marketRequestKey = session ? `${session.token}:${symbol}:${marketRetry}` : ''
   const loading = Boolean(session && loadedDashboardKey !== dashboardRequestKey)
   const marketLoading = Boolean(session && loadedMarketKey !== marketRequestKey)
+  const ratesRequestKey = session ? `${session.token}:${ratesRetry}` : ''
+  const ratesLoading = Boolean(session && loadedRatesKey !== ratesRequestKey)
+
+  const endSession = useCallback((message = '') => {
+    localStorage.removeItem(SESSION_KEY)
+    setSession(null)
+    setAccounts([])
+    setTransactions([])
+    setQuote(null)
+    setProfile(null)
+    setRates(null)
+    setAuthMessage(message)
+  }, [])
+
+  // Si el token venció, el backend responde 401/403: se cierra la sesión
+  const handleAuthError = useCallback((error: unknown) => {
+    if (isAuthError(error)) endSession('Tu sesión venció. Inicia sesión nuevamente.')
+  }, [endSession])
 
   useEffect(() => {
     if (!session) return
@@ -52,24 +79,15 @@ function App() {
         )
         if (!active) return
         setAccounts(nextAccounts)
-        setTransactions(
-          histories.flat()
-            .filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index)
-            .sort((left, right) => right.timestamp.localeCompare(left.timestamp)),
-        )
-        setSelectedId((current) =>
-          nextAccounts.some((account) => account.id === current) ? current : (nextAccounts[0]?.id ?? null),
-        )
+        // Una transferencia entre cuentas propias aparece en ambos historiales
+        const unique = histories.flat()
+          .filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index)
+        setTransactions(sortByNewest(unique))
         setDashboardError('')
       } catch (error) {
         if (!active) return
-        if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
-          localStorage.removeItem('bckdbank.session')
-          setSession(null)
-          setAuthMessage('Tu sesión venció. Inicia sesión nuevamente.')
-        } else {
-          setDashboardError(error instanceof Error ? error.message : 'No fue posible cargar tus cuentas.')
-        }
+        if (isAuthError(error)) handleAuthError(error)
+        else setDashboardError(error instanceof Error ? error.message : 'No pudimos cargar tus cuentas.')
       } finally {
         if (active) setLoadedDashboardKey(dashboardRequestKey)
       }
@@ -77,7 +95,7 @@ function App() {
 
     void loadDashboard()
     return () => { active = false }
-  }, [session, refreshKey, dashboardRequestKey])
+  }, [session, refreshKey, dashboardRequestKey, handleAuthError])
 
   useEffect(() => {
     if (!session) return
@@ -85,14 +103,18 @@ function App() {
 
     Promise.all([marketApi.getQuote(symbol), marketApi.getProfile(symbol)])
       .then(([nextQuote, nextProfile]) => {
-        if (active) {
-          setQuote(nextQuote)
-          setProfile(nextProfile)
-          setMarketError('')
-        }
+        if (!active) return
+        setQuote(nextQuote)
+        setProfile(nextProfile)
+        setMarketError('')
       })
       .catch((error: unknown) => {
-        if (active) setMarketError(error instanceof Error ? error.message : 'No se pudo consultar Finnhub.')
+        if (!active) return
+        setQuote(null)
+        setProfile(null)
+        setMarketError(error instanceof ApiError && error.status < 500
+          ? error.message
+          : 'No pudimos consultar el mercado. Revisa que el servicio financiero esté encendido.')
       })
       .finally(() => {
         if (active) setLoadedMarketKey(marketRequestKey)
@@ -101,9 +123,32 @@ function App() {
     return () => { active = false }
   }, [session, symbol, marketRetry, marketRequestKey])
 
+  // Tasas de cambio con base USD (las cuentas están en dólares); el backend las guarda en caché
+  useEffect(() => {
+    if (!session) return
+    let active = true
+
+    exchangeApi.getRates('USD', session.token)
+      .then((nextRates) => {
+        if (!active) return
+        setRates(nextRates)
+        setRatesError('')
+      })
+      .catch((error: unknown) => {
+        if (!active) return
+        if (isAuthError(error)) handleAuthError(error)
+        else setRatesError(error instanceof Error ? error.message : 'No pudimos consultar las tasas de cambio.')
+      })
+      .finally(() => {
+        if (active) setLoadedRatesKey(ratesRequestKey)
+      })
+
+    return () => { active = false }
+  }, [session, ratesRetry, ratesRequestKey, handleAuthError])
+
   useEffect(() => {
     if (!toast) return
-    const timer = window.setTimeout(() => setToast(''), 3600)
+    const timer = window.setTimeout(() => setToast(''), 4000)
     return () => window.clearTimeout(timer)
   }, [toast])
 
@@ -113,22 +158,13 @@ function App() {
       const next = mode === 'login'
         ? await bankApi.login(values.email, values.password)
         : await bankApi.register(values.firstName, values.lastName, values.email, values.password)
-      localStorage.setItem('bckdbank.session', JSON.stringify(next))
+      localStorage.setItem(SESSION_KEY, JSON.stringify(next))
       setSession(next)
-      setToast(mode === 'register' ? 'Cuenta creada. Ya puedes comenzar.' : 'Sesión iniciada correctamente.')
+      setToast(mode === 'register' ? 'Cuenta creada. Ya tienes una cuenta de ahorros lista.' : 'Sesión iniciada.')
     } catch (error) {
-      setAuthMessage(error instanceof Error ? error.message : 'No fue posible iniciar sesión.')
+      if (mode === 'login' && isAuthError(error)) setAuthMessage('El correo o la contraseña no coinciden.')
+      else setAuthMessage(error instanceof Error ? error.message : 'No pudimos iniciar sesión.')
     }
-  }
-
-  function logout() {
-    localStorage.removeItem('bckdbank.session')
-    setSession(null)
-    setAccounts([])
-    setTransactions([])
-    setQuote(null)
-    setProfile(null)
-    setAuthMessage('')
   }
 
   function refreshDashboard() {
@@ -136,18 +172,34 @@ function App() {
     setRefreshKey((value) => value + 1)
   }
 
-  async function transfer(values: TransferValues) {
+  // Ejecuta una operación, muestra el aviso y recarga saldos e historial.
+  // Si falla, el error sube al diálogo para que lo muestre junto al formulario.
+  async function runOperation(operation: (token: string) => Promise<unknown>, successMessage: string) {
     if (!session) return
-    await bankApi.transfer(values, session.token)
-    setDashboardError('')
-    setToast('Transferencia realizada correctamente.')
-    setRefreshKey((value) => value + 1)
+    try {
+      await operation(session.token)
+    } catch (error) {
+      handleAuthError(error)
+      throw error
+    }
+    setToast(successMessage)
+    refreshDashboard()
   }
+
+  const transfer = (values: TransferValues) =>
+    runOperation((token) => bankApi.transfer(values, token), 'Transferencia realizada.')
+  const deposit = (values: OperationValues) =>
+    runOperation((token) => bankApi.deposit(values, token), 'Depósito realizado.')
+  const withdraw = (values: OperationValues) =>
+    runOperation((token) => bankApi.withdraw(values, token), 'Retiro realizado.')
 
   if (!session) {
     return (
       <Routes>
-        <Route path="/login" element={<AuthScreen onAuthenticate={authenticate} message={authMessage} />} />
+        <Route
+          path="/login"
+          element={<AuthScreen onAuthenticate={authenticate} message={authMessage} onDismissMessage={() => setAuthMessage('')} />}
+        />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     )
@@ -155,6 +207,7 @@ function App() {
 
   return (
     <Routes>
+      <Route path="/login" element={<Navigate to="/" replace />} />
       <Route
         path="*"
         element={(
@@ -162,21 +215,21 @@ function App() {
             session={session}
             accounts={accounts}
             transactions={transactions}
-            selectedAccountId={selectedId}
             loading={loading}
             dashboardError={dashboardError}
-            quote={quote}
-            profile={profile}
-            symbol={symbol}
-            marketLoading={marketLoading}
-            marketError={marketError}
+            refreshKey={refreshKey}
+            market={{ symbol, quote, profile, loading: marketLoading, error: marketError }}
+            exchange={{ rates, loading: ratesLoading, error: ratesError }}
             toast={toast}
-            onSelectAccount={setSelectedId}
             onRefresh={refreshDashboard}
-            onLogout={logout}
+            onLogout={() => endSession()}
+            onAuthError={handleAuthError}
             onSearchSymbol={setSymbol}
             onRetryMarket={() => setMarketRetry((value) => value + 1)}
+            onRetryRates={() => setRatesRetry((value) => value + 1)}
             onTransfer={transfer}
+            onDeposit={deposit}
+            onWithdraw={withdraw}
             onDismissToast={() => setToast('')}
           />
         )}

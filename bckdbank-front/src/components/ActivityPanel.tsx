@@ -1,48 +1,127 @@
-import { ArrowLeftRight, ArrowRight, LoaderCircle } from 'lucide-react'
-import type { Account, Transaction } from '../lib/api'
+import { useState } from 'react'
+import { Inbox } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import type { Account, Transaction, TransactionType } from '../lib/api'
+import { accountTypeLabels, maskAccount } from '../lib/formatters'
+import { describeMovement, involvesAccount } from '../lib/movements'
 import TransactionRow from './TransactionRow'
 
 interface ActivityPanelProps {
-  account: Account | undefined
+  title: string
   transactions: Transaction[]
+  ownAccounts: string[]
   loading: boolean
-  onOpenTransfer: () => void
+  // Cuenta desde la que se interpretan las transferencias (detalle de cuenta)
+  focusAccount?: string
+  // Si se pasa, se muestra un selector para filtrar por cuenta
+  accounts?: Account[]
+  limit?: number
+  moreLink?: string
+  filters?: boolean
+  table?: boolean
 }
 
+const typeFilters: { value: TransactionType | 'ALL'; label: string }[] = [
+  { value: 'ALL', label: 'Todos' },
+  { value: 'DEPOSIT', label: 'Depósitos' },
+  { value: 'WITHDRAWAL', label: 'Retiros' },
+  { value: 'TRANSFER', label: 'Transferencias' },
+]
+
 export default function ActivityPanel({
-  account,
+  title,
   transactions,
+  ownAccounts,
   loading,
-  onOpenTransfer,
+  focusAccount,
+  accounts,
+  limit,
+  moreLink,
+  filters = false,
+  table = false,
 }: ActivityPanelProps) {
+  const [typeFilter, setTypeFilter] = useState<TransactionType | 'ALL'>('ALL')
+  const [accountFilter, setAccountFilter] = useState('')
+  const focus = focusAccount ?? (accountFilter || undefined)
+
+  const visible = transactions
+    .filter((item) => typeFilter === 'ALL' || item.transactionType === typeFilter)
+    .filter((item) => !accountFilter || involvesAccount(item, accountFilter))
+    .slice(0, limit)
+
+  const filtered = typeFilter !== 'ALL' || accountFilter !== ''
+
   return (
-    <section className="panel activity-panel" id="activity">
-      <div className="section-heading activity-heading">
-        <div><span className="eyebrow">TU CUENTA</span><h2>Actividad reciente</h2></div>
-        <span className="activity-account-label">
-          {account ? `•••• ${account.accountNumber.slice(-4)}` : 'Selecciona una cuenta'}
-        </span>
-      </div>
-      {loading ? (
-        <div className="loading-row"><LoaderCircle className="spin" size={20} />Cargando movimientos...</div>
-      ) : transactions.length === 0 ? (
-        <div className="empty-state empty-activity">
-          <ArrowLeftRight size={23} />
-          <p>Tus transferencias aparecerán aquí.</p>
-          <button onClick={onOpenTransfer} disabled={!account}>
-            Hacer una transferencia <ArrowRight size={14} />
-          </button>
+    <section className="panel">
+      <header className="panel-header">
+        <h2>{title}</h2>
+        {moreLink && transactions.length > 0 && <Link to={moreLink} className="link">Ver todos</Link>}
+      </header>
+
+      {filters && (
+        <div className="filter-bar">
+          <div className="segmented" role="group" aria-label="Filtrar por tipo de movimiento">
+            {typeFilters.map((option) => (
+              <button
+                key={option.value}
+                aria-pressed={typeFilter === option.value}
+                onClick={() => setTypeFilter(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          {accounts && accounts.length > 1 && (
+            <label className="select-inline">
+              <span className="sr-only">Filtrar por cuenta</span>
+              <select value={accountFilter} onChange={(event) => setAccountFilter(event.target.value)}>
+                <option value="">Todas las cuentas</option>
+                {accounts.map((account) => (
+                  <option key={account.id} value={account.accountNumber}>
+                    {accountTypeLabels[account.accountType]} {maskAccount(account.accountNumber)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+        </div>
+      )}
+
+      {loading && !transactions.length ? (
+        <ul className="tx-list" aria-busy="true">
+          {[0, 1, 2, 3].map((item) => <li key={item} className="skeleton skeleton-row" />)}
+          <li className="sr-only">Cargando movimientos…</li>
+        </ul>
+      ) : visible.length === 0 ? (
+        <div className="empty">
+          <Inbox size={28} />
+          <p>{filtered
+            ? 'No hay movimientos con este filtro.'
+            : 'Tus movimientos aparecerán aquí. Empieza con un depósito o una transferencia.'}</p>
         </div>
       ) : (
-        <div className="transaction-list">
-          {transactions.slice(0, 6).map((transaction) => (
-            <TransactionRow
-              key={transaction.id}
-              transaction={transaction}
-              outgoing={transaction.sourceAccountNumber === account?.accountNumber}
-            />
-          ))}
-        </div>
+        <>
+          {table && (
+            <div className="tx-table-head" aria-hidden="true">
+              <span />
+              <span>Descripción</span>
+              <span>Tipo</span>
+              <span>Cuenta relacionada</span>
+              <span>Fecha</span>
+              <span>Monto</span>
+            </div>
+          )}
+          <ul className="tx-list">
+            {visible.map((transaction) => (
+              <TransactionRow
+                key={transaction.id}
+                transaction={transaction}
+                movement={describeMovement(transaction, ownAccounts, focus)}
+                table={table}
+              />
+            ))}
+          </ul>
+        </>
       )}
     </section>
   )

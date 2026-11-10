@@ -1,55 +1,48 @@
-import { ArrowLeftRight, ArrowRight, ArrowUpRight, RefreshCw, Wallet } from 'lucide-react'
-import { formatMoney } from '../lib/formatters'
+import { ArrowLeftRight, ShieldCheck, Wallet } from 'lucide-react'
+import type { Account } from '../lib/api'
+import { accountTypeLabels, formatCurrencyCode, formatMoney, formatRole } from '../lib/formatters'
 
 interface DashboardSummaryProps {
-  accountCount: number
-  totalBalance: number
+  accounts: Account[]
   transactionCount: number
+  role: string
   loading: boolean
-  onRefresh: () => void
-  onOpenTransfer: () => void
+  // Pesos colombianos por dólar, si ya cargaron las tasas de cambio
+  copRate?: number
 }
 
-export default function DashboardSummary({
-  accountCount,
-  totalBalance,
-  transactionCount,
-  loading,
-  onRefresh,
-  onOpenTransfer,
-}: DashboardSummaryProps) {
+export default function DashboardSummary({ accounts, transactionCount, role, loading, copRate }: DashboardSummaryProps) {
+  const totalBalance = accounts.reduce((total, account) => total + account.balance, 0)
+  const types = [...new Set(accounts.map((account) => accountTypeLabels[account.accountType]))].join(', ')
+
   return (
-    <section className="summary-grid" aria-label="Resumen financiero">
-      <article className="balance-panel">
-        <div className="balance-panel-top">
-          <span>Saldo total disponible · USD</span>
-          <span className="balance-chip">
-            <Wallet size={14} />{accountCount} {accountCount === 1 ? 'cuenta' : 'cuentas'}
-          </span>
+    <section className="summary" aria-label="Resumen financiero">
+      <div className="summary-balance">
+        <span className="summary-label">Saldo total disponible en USD</span>
+        {loading && !accounts.length
+          ? <span className="skeleton skeleton-amount" />
+          : <strong className="amount-hero">{formatMoney(totalBalance)}</strong>}
+        {copRate !== undefined && accounts.length > 0 && (
+          <span className="summary-cop amount">≈ {formatCurrencyCode(totalBalance * copRate, 'COP')}</span>
+        )}
+      </div>
+      <dl className="summary-stats">
+        <div>
+          <dt><Wallet size={16} />Cuentas</dt>
+          <dd>{accounts.length}</dd>
+          <small>{types || 'Sin cuentas aún'}</small>
         </div>
-        <div className="balance-value">
-          {loading ? <span className="balance-skeleton" /> : formatMoney(totalBalance)}
+        <div>
+          <dt><ArrowLeftRight size={16} />Movimientos registrados</dt>
+          <dd>{transactionCount}</dd>
+          <small>En todas tus cuentas</small>
         </div>
-        <div className="balance-panel-bottom">
-          <span>Consolidado de tus cuentas</span>
-          <button onClick={onRefresh} aria-label="Actualizar saldos" title="Actualizar saldos">
-            <RefreshCw size={16} />
-          </button>
+        <div>
+          <dt><ShieldCheck size={16} />Sesión</dt>
+          <dd className="summary-active">Activa</dd>
+          <small>Rol: {formatRole(role)}</small>
         </div>
-        <div className="balance-decoration balance-decoration-one" />
-        <div className="balance-decoration balance-decoration-two" />
-      </article>
-      <article className="metric-panel">
-        <div className="metric-icon metric-icon-mint"><ArrowLeftRight size={18} /></div>
-        <span className="metric-label">Movimientos registrados</span>
-        <strong className="metric-value">{loading ? '—' : transactionCount}</strong>
-        <span className="metric-footnote">En tus cuentas</span>
-      </article>
-      <button className="transfer-cta" onClick={onOpenTransfer} disabled={accountCount === 0}>
-        <span className="cta-icon"><ArrowUpRight size={20} /></span>
-        <span><strong>Transferir dinero</strong><small>Envía a otra cuenta Bckd</small></span>
-        <ArrowRight className="cta-arrow" size={18} />
-      </button>
+      </dl>
     </section>
   )
 }

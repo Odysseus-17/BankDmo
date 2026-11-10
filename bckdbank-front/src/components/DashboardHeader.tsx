@@ -1,32 +1,19 @@
-import { ChevronDown } from 'lucide-react'
-import { useLocation } from 'react-router-dom'
+import type { ReactNode } from 'react'
 
 interface DashboardHeaderProps {
-  email: string
-  onLogout: () => void
+  title: string
+  subtitle?: string
+  children?: ReactNode
 }
 
-export default function DashboardHeader({ email, onLogout }: DashboardHeaderProps) {
-  const { pathname } = useLocation()
-  const pageName = pathname === '/accounts'
-    ? 'Mis cuentas'
-    : pathname === '/activity'
-      ? 'Movimientos'
-      : 'Resumen'
-
+export default function DashboardHeader({ title, subtitle, children }: DashboardHeaderProps) {
   return (
-    <header className="topbar">
-      <div className="breadcrumb">
-        <span>Área personal</span><span className="breadcrumb-slash">/</span><strong>{pageName}</strong>
+    <header className="page-header">
+      <div>
+        <h1>{title}</h1>
+        {subtitle && <p>{subtitle}</p>}
       </div>
-      <div className="topbar-actions">
-        <div className="status-pill"><span className="status-dot" />Sesión segura</div>
-        <span className="avatar">{email.slice(0, 1).toUpperCase()}</span>
-        <span className="profile-email">{email}</span>
-        <button className="icon-button" onClick={onLogout} aria-label="Cerrar sesión" title="Cerrar sesión">
-          <ChevronDown size={16} />
-        </button>
-      </div>
+      {children && <div className="page-actions">{children}</div>}
     </header>
   )
 }

@@ -1,36 +1,51 @@
-import { ArrowLeftRight, LayoutDashboard, LogOut, ShieldCheck, Wallet } from 'lucide-react'
-import { Link, NavLink } from 'react-router-dom'
+import { ArrowLeftRight, ChartLine, LayoutGrid, LogOut, Wallet } from 'lucide-react'
+import { NavLink } from 'react-router-dom'
+import { formatRole } from '../lib/formatters'
 import BrandMark from './BrandMark'
 
 interface DashboardSidebarProps {
+  email: string
+  role: string
   onLogout: () => void
 }
 
-export default function DashboardSidebar({ onLogout }: DashboardSidebarProps) {
+const links = [
+  { to: '/', label: 'Resumen', icon: LayoutGrid, end: true },
+  { to: '/cuentas', label: 'Mis cuentas', icon: Wallet, end: false },
+  { to: '/movimientos', label: 'Movimientos', icon: ArrowLeftRight, end: false },
+  { to: '/mercado', label: 'Mercado', icon: ChartLine, end: false },
+]
+
+function NavItems({ className }: { className: string }) {
+  return links.map(({ to, label, icon: Icon, end }) => (
+    <NavLink key={to} to={to} end={end} className={className}>
+      <Icon size={19} />
+      <span>{label}</span>
+    </NavLink>
+  ))
+}
+
+export default function DashboardSidebar({ email, role, onLogout }: DashboardSidebarProps) {
   return (
-    <aside className="sidebar">
-      <Link className="brand" to="/" aria-label="Bckd Bank, inicio">
-        <BrandMark /><span className="brand-name">bckd<span>bank</span></span>
-      </Link>
-      <div className="sidebar-label">MENÚ PRINCIPAL</div>
-      <nav className="side-nav" aria-label="Navegación principal">
-        <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}>
-          <LayoutDashboard size={18} />Resumen
-        </NavLink>
-        <NavLink to="/accounts" className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}>
-          <Wallet size={18} />Mis cuentas
-        </NavLink>
-        <NavLink to="/activity" className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}>
-          <ArrowLeftRight size={18} />Movimientos
-        </NavLink>
-      </nav>
-      <div className="sidebar-bottom">
-        <div className="secure-note">
-          <ShieldCheck size={17} /><span>Conexión segura<br /><strong>Sesión protegida</strong></span>
+    <>
+      <aside className="sidebar">
+        <BrandMark tone="light" />
+        <nav className="sidebar-nav" aria-label="Navegación principal">
+          <NavItems className="sidebar-link" />
+        </nav>
+        <div className="sidebar-user">
+          <span className="avatar" aria-hidden="true">{email.slice(0, 2).toUpperCase()}</span>
+          <span className="sidebar-user-text">
+            <strong title={email}>{email}</strong>
+            <small>{formatRole(role)}</small>
+          </span>
         </div>
-        <button className="nav-link logout-link" onClick={onLogout}><LogOut size={18} />Cerrar sesión</button>
-        <span className="sidebar-version">Bckd Bank · Demo</span>
-      </div>
-    </aside>
+        <button className="sidebar-logout" onClick={onLogout}><LogOut size={18} />Cerrar sesión</button>
+      </aside>
+
+      <nav className="bottom-nav" aria-label="Navegación principal">
+        <NavItems className="bottom-link" />
+      </nav>
+    </>
   )
 }

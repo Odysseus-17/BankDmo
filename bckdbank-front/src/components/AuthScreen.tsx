@@ -1,121 +1,153 @@
 import { useState, type FormEvent } from 'react'
-import { ArrowRight, ArrowUpRight, Check, LoaderCircle, ShieldCheck } from 'lucide-react'
+import { ArrowRight, CircleAlert, Eye, EyeOff, LoaderCircle, Lock, Mail, ShieldCheck, Smartphone, X, Zap } from 'lucide-react'
 import type { AuthMode } from '../types/auth'
 import BrandMark from './BrandMark'
 
 interface AuthScreenProps {
-  onAuthenticate: (mode: AuthMode, values: Record<string, string>) => Promise<void>
   message: string
+  onAuthenticate: (mode: AuthMode, values: Record<string, string>) => Promise<void>
+  onDismissMessage: () => void
 }
 
-export default function AuthScreen({ onAuthenticate, message }: AuthScreenProps) {
+const copy: Record<AuthMode, { title: string; subtitle: string; submit: string }> = {
+  login: { title: 'Qué bueno verte.', subtitle: 'Ingresa a tu espacio financiero.', submit: 'Entrar a mi cuenta' },
+  register: { title: 'Empecemos.', subtitle: 'Crea tu acceso y abre tu primera cuenta.', submit: 'Crear mi cuenta' },
+}
+
+const features = [
+  { icon: ShieldCheck, title: 'Seguro', text: 'Tu sesión viaja con un token cifrado.' },
+  { icon: Zap, title: 'Simple', text: 'Cuentas, movimientos y transferencias en un solo lugar.' },
+  { icon: Smartphone, title: 'Siempre contigo', text: 'Funciona igual en tu computador y en tu celular.' },
+]
+
+export default function AuthScreen({ message, onAuthenticate, onDismissMessage }: AuthScreenProps) {
   const [mode, setMode] = useState<AuthMode>('login')
-  const [busy, setBusy] = useState(false)
-  const [formError, setFormError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const text = copy[mode]
+
+  function switchMode(next: AuthMode) {
+    setMode(next)
+    onDismissMessage()
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setBusy(true)
-    setFormError('')
-    const values = Object.fromEntries(new FormData(event.currentTarget).entries()) as Record<string, string>
-
-    try {
-      await onAuthenticate(mode, values)
-    } catch (error) {
-      setFormError(error instanceof Error ? error.message : 'No fue posible completar la solicitud.')
-    } finally {
-      setBusy(false)
-    }
+    const values = Object.fromEntries(new FormData(event.currentTarget)) as Record<string, string>
+    setSubmitting(true)
+    await onAuthenticate(mode, values)
+    setSubmitting(false)
   }
 
   return (
-    <main className="auth-page">
-      <section className="auth-art" aria-label="Bckd Bank">
-        <a className="brand brand-on-dark" href="#login">
-          <BrandMark /><span className="brand-name">bckd<span>bank</span></span>
-        </a>
-        <div className="auth-art-copy">
-          <span className="eyebrow">TU BANCA, A TU RITMO</span>
-          <h1>Lo importante<br />es avanzar<span>.</span></h1>
-          <p>Un espacio claro para cuidar, mover y entender tu dinero.</p>
+    <div className="auth-page">
+      <section className="auth-brand" aria-label="Bckd Bank">
+        <BrandMark tone="light" tagline />
+        <div className="auth-pitch">
+          <h1>Tu banca, protegida.</h1>
+          <p>Tus datos viajan protegidos y cifrados.</p>
         </div>
-        <div className="auth-visual" aria-hidden="true">
-          <div className="visual-orbit orbit-one" />
-          <div className="visual-orbit orbit-two" />
-          <div className="visual-card visual-card-back">
-            <span className="visual-card-brand">bckd<span>bank</span></span>
-            <span className="visual-card-chip" />
+        <ul className="auth-features">
+          {features.map(({ icon: Icon, title, text: detail }) => (
+            <li key={title}>
+              <span className="auth-feature-icon"><Icon size={20} /></span>
+              <span><strong>{title}</strong>{detail}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="auth-art" aria-hidden="true">
+          <div className="bank-card bank-card-art">
+            <span className="bank-card-chip" />
+            <span className="bank-card-word">bckd</span>
           </div>
-          <div className="visual-card visual-card-front">
-            <span className="visual-card-label">VISTA DE EJEMPLO</span>
-            <strong>$ 8.420,50</strong>
-            <span className="visual-card-bottom">
-              <span>•••• 2846</span><span className="card-circles"><i /><i /></span>
-            </span>
-          </div>
-          <div className="visual-float float-arrow"><ArrowUpRight size={19} /></div>
-          <div className="visual-float float-check"><Check size={17} /></div>
+          <div className="auth-shield"><Lock size={34} strokeWidth={2.2} /></div>
         </div>
-        <div className="auth-art-foot"><span>FINANZAS MÁS HUMANAS</span><span>01 — 03</span></div>
+        <footer className="auth-brand-footer">
+          <strong>Finanzas más humanas</strong>
+          <span>Un espacio claro para cuidar, mover y entender tu dinero.</span>
+        </footer>
       </section>
-      <section className="auth-side" id="login">
-        <div className="auth-mobile-brand">
-          <BrandMark /><span className="brand-name">bckd<span>bank</span></span>
-        </div>
+
+      <main className="auth-panel">
         <div className="auth-form-wrap">
-          <div className="auth-intro">
-            <span className="eyebrow">ÁREA PERSONAL</span>
-            <h2>{mode === 'login' ? 'Qué bueno verte.' : 'Empecemos.'}</h2>
-            <p>{mode === 'login' ? 'Ingresa a tu espacio financiero.' : 'Crea tu acceso y abre tu primera cuenta.'}</p>
-          </div>
           <div className="auth-tabs" role="tablist" aria-label="Acceso a la cuenta">
-            <button
-              className={mode === 'login' ? 'auth-tab active' : 'auth-tab'}
-              onClick={() => { setMode('login'); setFormError('') }}
-              role="tab"
-              aria-selected={mode === 'login'}
-            >
-              Iniciar sesión
-            </button>
-            <button
-              className={mode === 'register' ? 'auth-tab active' : 'auth-tab'}
-              onClick={() => { setMode('register'); setFormError('') }}
-              role="tab"
-              aria-selected={mode === 'register'}
-            >
-              Crear cuenta
-            </button>
+            <button role="tab" aria-selected={mode === 'login'} onClick={() => switchMode('login')}>Iniciar sesión</button>
+            <button role="tab" aria-selected={mode === 'register'} onClick={() => switchMode('register')}>Crear cuenta</button>
           </div>
-          <form className="auth-form" onSubmit={submit}>
+
+          <header className="auth-heading">
+            <h2>{text.title}</h2>
+            <p>{text.subtitle}</p>
+          </header>
+
+          <form className="form" onSubmit={submit} key={mode}>
             {mode === 'register' && (
-              <div className="name-fields">
-                <label>Nombre<input name="firstName" autoComplete="given-name" required placeholder="Tu nombre" /></label>
-                <label>Apellido<input name="lastName" autoComplete="family-name" required placeholder="Tu apellido" /></label>
+              <div className="field-row">
+                <label className="field">
+                  <span>Nombre</span>
+                  <input name="firstName" required autoComplete="given-name" placeholder="Tu nombre" />
+                </label>
+                <label className="field">
+                  <span>Apellido</span>
+                  <input name="lastName" required autoComplete="family-name" placeholder="Tu apellido" />
+                </label>
               </div>
             )}
-            <label>Correo electrónico<input name="email" type="email" autoComplete="email" required placeholder="nombre@correo.com" /></label>
-            <label>
-              Contraseña
-              <input
-                name="password"
-                type="password"
-                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                minLength={6}
-                required
-                placeholder={mode === 'login' ? 'Tu contraseña' : 'Mínimo 6 caracteres'}
-              />
+            <label className="field">
+              <span>Correo electrónico</span>
+              <span className="input-icon">
+                <Mail size={18} />
+                <input name="email" type="email" required autoComplete="email" placeholder="nombre@correo.com" />
+              </span>
             </label>
-            {(formError || message) && <div className="alert alert-error" role="alert">{formError || message}</div>}
-            <button className="primary-button auth-submit" type="submit" disabled={busy}>
-              {busy
-                ? <LoaderCircle className="spin" size={18} />
-                : <>{mode === 'login' ? 'Entrar a mi cuenta' : 'Crear mi cuenta'}<ArrowRight size={17} /></>}
+            <label className="field">
+              <span>Contraseña</span>
+              <span className="input-icon">
+                <Lock size={18} />
+                <input
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  minLength={mode === 'register' ? 6 : undefined}
+                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                  placeholder={mode === 'register' ? 'Mínimo 6 caracteres' : 'Tu contraseña'}
+                />
+                <button
+                  type="button"
+                  className="input-action"
+                  onClick={() => setShowPassword((value) => !value)}
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </span>
+            </label>
+
+            {mode === 'register' && (
+              <p className="form-note">Al crear tu acceso te abrimos una cuenta de ahorros con USD 1.000 de saldo de prueba.</p>
+            )}
+
+            <button className="btn btn-primary btn-block" type="submit" disabled={submitting}>
+              {submitting ? <LoaderCircle className="spin" size={18} /> : null}
+              {text.submit}
+              {!submitting && <ArrowRight size={18} />}
             </button>
+
+            {message && (
+              <div className="alert alert-error" role="alert">
+                <CircleAlert size={18} />
+                <span>{message}</span>
+                <button type="button" className="icon-btn" onClick={onDismissMessage} aria-label="Cerrar aviso"><X size={16} /></button>
+              </div>
+            )}
           </form>
-          <div className="auth-assurance"><ShieldCheck size={17} /><span>Tus datos viajan protegidos y cifrados.</span></div>
         </div>
-        <footer className="auth-footer"><span>© 2026 Bckd Bank</span><span>Entorno de demostración</span></footer>
-      </section>
-    </main>
+
+        <footer className="auth-footer">
+          <span>© 2026 Bckd Bank</span>
+          <span><Lock size={14} /> Conexión segura</span>
+        </footer>
+      </main>
+    </div>
   )
 }
