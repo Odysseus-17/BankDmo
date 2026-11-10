@@ -17,7 +17,7 @@ Desde la raíz del proyecto:
 2. Ejecuta:
    - Windows: `./mvnw spring-boot:run`
 3. La API quedará disponible en:
-   - `http://localhost:8080`
+   - `http://localhost:8081`
 
 La aplicación usa MySQL. Por defecto se conecta a:
 
@@ -32,8 +32,8 @@ Puedes cambiar estos valores mediante las variables de entorno `DB_URL`, `DB_USE
 
 Con la aplicación ejecutándose, abre la documentación interactiva en:
 
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
-- Especificación OpenAPI: `http://localhost:8080/v3/api-docs`
+- Swagger UI: `http://localhost:8081/swagger-ui.html`
+- Especificación OpenAPI: `http://localhost:8081/v3/api-docs`
 
 Para probar endpoints protegidos desde Swagger:
 
@@ -56,7 +56,7 @@ No se usa curl ni terminal para probar la API. Todas las pruebas se hacen por en
 
 En Postman o Thunder Client crea una petición de tipo POST.
 
-- URL: `http://localhost:8080/api/v1/auth/register`
+- URL: `http://localhost:8081/api/v1/auth/register`
 - Body: raw JSON
 
 ```json
@@ -76,7 +76,7 @@ Si todo sale bien, la respuesta devolverá un token JWT y el email del usuario r
 
 Crea otra petición POST.
 
-- URL: `http://localhost:8080/api/v1/auth/login`
+- URL: `http://localhost:8081/api/v1/auth/login`
 - Body: raw JSON
 
 ```json
@@ -108,7 +108,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 ### 4. Consultar cuentas del usuario autenticado
 
 - Método: GET
-- URL: `http://localhost:8080/api/v1/accounts`
+- URL: `http://localhost:8081/api/v1/accounts`
 - Headers:
   - `Authorization: Bearer <TOKEN_GENERADO>`
 
@@ -117,7 +117,7 @@ Haz clic en Send y revisa la respuesta.
 ### 5. Consultar una cuenta específica
 
 - Método: GET
-- URL: `http://localhost:8080/api/v1/accounts/{accountNumber}`
+- URL: `http://localhost:8081/api/v1/accounts/{accountNumber}`
 - Headers:
   - `Authorization: Bearer <TOKEN_GENERADO>`
 
@@ -141,7 +141,7 @@ Para probar una transferencia, registra un segundo usuario y consulta su número
 Inicia sesión con el usuario propietario de la cuenta de origen y usa su token.
 
 - Método: POST
-- URL: `http://localhost:8080/api/v1/transactions/transfer`
+- URL: `http://localhost:8081/api/v1/transactions/transfer`
 - Headers:
   - `Authorization: Bearer <TOKEN_GENERADO>`
   - `Content-Type: application/json`
@@ -160,7 +160,7 @@ La cuenta de origen debe pertenecer al usuario autenticado y debe tener saldo su
 ### 8. Consultar el historial
 
 - Método: GET
-- URL: `http://localhost:8080/api/v1/transactions/account/{accountNumber}`
+- URL: `http://localhost:8081/api/v1/transactions/account/{accountNumber}`
 - Headers:
   - `Authorization: Bearer <TOKEN_GENERADO>`
 
@@ -216,6 +216,36 @@ Puedes crear varios usuarios para validar el flujo completo:
 }
 ```
 
+## Otros endpoints
+
+Todos requieren el header `Authorization: Bearer <token>`.
+
+- `POST /api/v1/transactions/deposit` — body: `{ "accountNumber": "...", "amount": 500, "description": "Depósito" }`
+- `POST /api/v1/transactions/withdraw` — body: `{ "accountNumber": "...", "amount": 100, "description": "Retiro" }`
+- `GET /api/v1/exchange-rates?base=USD` — tasas de cambio actuales (consulta la API pública ExchangeRate-API, necesita internet).
+- `GET /api/v1/exchange-rates/convert?from=USD&to=COP&amount=10` — convierte un monto entre monedas.
+
+## Frontend (bckdbank-front)
+
+Requisitos: Node.js 20+ y el backend ejecutándose en `http://localhost:8081`.
+
+```bash
+cd bckdbank-front
+npm install
+npm run dev
+```
+
+Abre `http://localhost:5173`. Vite reenvía las peticiones `/api` al backend, así que no hace falta configurar CORS.
+
+Opcional: crea `bckdbank-front/.env` para cambiar las URLs:
+
+```text
+VITE_BACKEND_URL=http://localhost:8081
+VITE_FINANCIAL_SERVICE_URL=http://localhost:3000
+```
+
+La sección **Mercado** (cotizaciones de acciones) depende de un servicio financiero aparte en `http://localhost:3000` (rutas `/finnhub/quote` y `/finnhub/profile`). Si ese servicio no está iniciado, solo esa sección muestra un aviso de error; el resto de la aplicación funciona normalmente.
+
 ## Solución de problemas
 
 - Si aparece `401 Unauthorized`, revisa que el token esté bien enviado en el header `Authorization`.
@@ -229,7 +259,7 @@ Puedes crear varios usuarios para validar el flujo completo:
 src/
   main/
     java/
-      com/danidevbank/demo/
+      com/darnelldev/demo/
         config/
         controller/
         dto/
@@ -249,6 +279,7 @@ controller/
   AuthController.java
   AccountController.java
   TransactionController.java
+  ExchangeRateController.java
 ```
 
 ## Tecnologías usadas

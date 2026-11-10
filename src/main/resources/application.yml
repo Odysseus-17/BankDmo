@@ -1,5 +1,5 @@
 server:
-    port: 8080
+    port: 8081
 
 spring:
     application:
@@ -25,3 +25,7 @@ app:
     jwt:
         secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
         expiration-ms: 86400000
+    exchange-rate:
+        # API pública de tasas de cambio (sin clave). Docs: https://www.exchangerate-api.com/docs/free
+        base-url: https://open.er-api.com/v6
+        cache-minutes: 60

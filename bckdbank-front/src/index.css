@@ -1,0 +1,126 @@
+:root {
+  /* Paleta Bckd: verdes de bosque sobre un fondo de niebla */
+  --forest: #173f35;
+  --forest-deep: #10302a;
+  --pine: #185748;
+  --pine-hover: #124538;
+  --mint: #9fd6b9;
+  --moss: #eaf3ed;
+  --mist: #f2f5f2;
+  --surface: #ffffff;
+  --line: #e1e8e3;
+  --line-strong: #c9d5cd;
+  --ink: #1c2824;
+  --ink-soft: #5f6c66;
+  --ink-faint: #8b968f;
+
+  --positive: #1d7a50;
+  --positive-bg: #e5f3eb;
+  --negative: #b23c36;
+  --negative-bg: #fbeceb;
+  --warning: #85570f;
+  --warning-bg: #fdf3df;
+
+  /* El radio crece con la jerarquía: controles < tarjetas < paneles */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 26px;
+
+  --font: 'DM Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  /* Escala tipográfica 1.25 */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5625rem;
+  --text-2xl: 1.953rem;
+  --text-3xl: 2.441rem;
+  --text-4xl: 3.052rem;
+
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--mist);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--mist);
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+dl,
+dd {
+  margin: 0;
+}
+
+ul {
+  padding: 0;
+  list-style: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+:focus-visible {
+  outline: 3px solid var(--mint);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
